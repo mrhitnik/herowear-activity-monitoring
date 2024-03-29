@@ -1,0 +1,90 @@
+import serial  # Import the serial library to communicate with the Arduino
+import schedule  # Import the schedule library to run tasks at regular intervals
+import csv  # Import the csv library to write data to a CSV file
+import datetime  # Import the datetime library to get the current date and time
+from utils.analyze import analyze, load_analysis  # Import the analyze functions from the analyze.py file in the utils folder
+
+from tkinter import *  # Import everything from the tkinter library for creating GUIs
+import tkinter as tk  # Import the tkinter library as tk for creating GUIs
+from playsound import playsound  # Import the playsound function to play sounds
+
+arduino = serial.Serial('com3', 9600)  # Open a serial connection to the Arduino on COM3 at 9600 baud rate
+
+task = './data/test'  # Define the task name and the path to the test data
+
+mytime = str(datetime.datetime.now())  # Get the current date and time as a string
+time_values = mytime.split(' ')  # Split the date and time into separate values
+starting_date = time_values[0]  # Get the starting date
+starting_time = time_values[1]  # Get the starting time
+
+def main_func():  # Define the main function
+    arduino_data = arduino.readline()  # Read a line of data from the Arduino
+    decoded_value = str(arduino_data[0:len(arduino_data)].decode("utf-8"))  # Decode the data from bytes to a string
+
+    time_WO_millisecs = starting_time.split('.')  # Split the starting time into hours, minutes, and seconds
+    HRS = time_WO_millisecs[0].split(':')  # Split the hours, minutes, and seconds into separate values
+
+    fileName = task + '_' + starting_date + '_' + HRS[0] + HRS[1] + HRS[2] + '.csv'  # Create a filename for the CSV file
+    
+    header = ["Time" , "Weight(lbs)"]  # Define the header for the CSV file
+
+    try:
+        open(fileName, 'r')  # Try to open the CSV file
+    except:
+        file = open(fileName, 'w')  # If the file doesn't exist, create it
+        filewriter = csv.writer(file, delimiter=',')  # Create a CSV writer
+        filewriter.writerow([header[0], header[1]])  # Write the header to the CSV file
+        file.close()  # Close the file
+
+    mytime = str(datetime.datetime.now())  # Get the current date and time as a string
+    time_values = mytime.split(' ')  # Split the date and time into separate values
+
+    file = open(fileName, 'a', newline = '')  # Open the CSV file in append mode
+    filewriter = csv.writer(file, delimiter=',')  # Create a CSV writer
+    try:
+        filewriter.writerow([time_values[1], float(decoded_value)])  # Try to write the current time and the decoded value as a float to the CSV file
+    except:
+        filewriter.writerow([time_values[1], decoded_value])  # If the decoded value can't be converted to a float, write it as a string
+
+    file.close()  # Close the file
+
+    value = float(decoded_value[:-2])  # Convert the decoded value to a float, excluding the last two characters
+    arduino_data = 0  # Reset the Arduino data to 0
+    if value > 100:  # If the value is greater than 100
+        value = 0.99  # Set the value to 0.99
+    return value  # Return the value
+
+if __name__ == '__main__':  # If this script is being run directly (not imported as a module)
+    wait_period = 150  # Define the wait period
+    window = 100  # Define the window size
+    alerting_tolerance = 150  # Define the alerting tolerance
+    alerting_load = 0  # Initialize the alerting load
+    print('Waiting for Enough Work to be done...')  # Print a message to the console
+
+    holder = []  # Initialize an empty list to hold data
+    x_axis = []  # Initialize an empty list for the x-axis
+    count = 1  # Initialize a counter
+
+    while True:  # Start an infinite loop
+        holder.append(main_func())  # Call the main function and append the returned value to the holder list
+        x_axis.append(count)  # Append the current count to the x-axis list
+
+        if (len(holder) >= wait_period) and (count % window == 0):  # If the length of the holder list is greater than or equal to the wait period and the count is a multiple of the window size
+            holder_period = holder[-wait_period:]  # Get the last wait_period elements from the holder list
+
+            l, v = analyze(holder_period)  # Analyze the holder_period data
+            alerting_load = load_analysis(alerting_load, l, v)  # Adjust the alerting load based on the analysis
+
+            alerting_level = 'Low'  # Initialize the alerting level as 'Low'
+            if alerting_load > alerting_tolerance:  # If the alerting load is greater than the alerting tolerance
+                alerting_level = 'High'  # Set the alerting level to 'High'
+            elif alerting_load > alerting_tolerance/2:  # If the alerting load is greater than half of the alerting tolerance
+                alerting_level = 'Medium'  # Set the alerting level to 'Medium'
+
+            print('Alerting Level: %s   (%s %s Load)' % (alerting_level, l, v))  # Print the alerting level, load, and variation to the console
+
+            if alerting_load > alerting_tolerance:  # If the alerting load is greater than the alerting tolerance
+                playsound('sounds/what.mp3')  # Play a sound
+                alerting_load += -50  # Decrease the alerting load by 50
+
+        count += 1  # Increment the count

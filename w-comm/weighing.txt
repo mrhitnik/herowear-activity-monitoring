@@ -1,0 +1,29 @@
+#include <Arduino.h>
+#include "HX711.h"  // Include the HX711 library to interact with the load cell
+
+const int LOADCELL_DOUT_PIN = 5;  // Define the pin connected to the Data Out (DOUT) pin of the load cell
+const int LOADCELL_SCK_PIN = 6;  // Define the pin connected to the Serial Clock (SCK) pin of the load cell
+
+HX711 scale;  // Create an instance of the HX711 class
+
+void setup()
+{
+  Serial.begin(9600);  // Start serial communication at 9600 baud rate
+
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);  // Initialize the scale using the defined pins
+
+  scale.tare();  // Reset the scale to 0
+}
+
+void loop()
+{
+  scale.set_scale(10481.51);  // Calibrate the scale. You might need to change this value based on your specific load cell
+
+  double reading = scale.get_units();  // Read the current weight from the load cell
+
+  if (reading < 0) { reading *= -1; }   // If the reading is negative, make it positive
+
+  Serial.println(reading);  // Send the reading to the serial port
+
+  delay(1);  // Wait for 1 millisecond before the next loop
+}

@@ -1,0 +1,33 @@
+import numpy as np  // Import the numpy library for numerical operations
+
+def analyze(data):  // Define a function that takes a list of data points
+    data_mean = np.mean(data)  // Calculate the mean of the data
+    data_var = np.var(data)  // Calculate the variance of the data
+
+    load = 'Low'  // Initialize the load as 'Low'
+    if data_mean > 1:  // If the mean of the data is greater than 1
+        load = 'Medium'  // Set the load to 'Medium'
+    if data_mean > 1.5:  // If the mean of the data is greater than 1.5
+        load = 'Heavy'  // Set the load to 'Heavy'
+
+    variation = 'Consistent'  // Initialize the variation as 'Consistent'
+    if data_var > 1:  // If the variance of the data is greater than 1
+        variation = 'Varying'  // Set the variation to 'Varying'
+
+    return load, variation  // Return the load and variation
+
+def load_analysis(al, l, v):  // Define a function that takes an alerting load, load, and variation
+
+    if l == 'low':  // If the load is 'low'
+        al += -10  // Decrease the alerting load by 10
+    elif l == 'Medium':  // If the load is 'Medium'
+        al += 5  // Increase the alerting load by 5
+    elif l == 'Heavy':  // If the load is 'Heavy'
+        al += 15  // Increase the alerting load by 15
+
+    if v == 'Consistent':  // If the variation is 'Consistent'
+        al += -5  // Decrease the alerting load by 5
+    else:  // If the variation is not 'Consistent'
+        al += 10  // Increase the alerting load by 10
+
+    return np.max([al,0])  // Return the maximum of the alerting load and 0

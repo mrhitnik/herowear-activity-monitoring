@@ -1,0 +1,22 @@
+import serial  # Import the serial library to communicate with the Arduino
+import schedule  # Import the schedule library to run tasks at regular intervals
+import csv  # Import the csv library to write data to a CSV file
+import datetime  # Import the datetime library to get the current date and time
+
+arduino = serial.Serial('com3', 9600)  // Open a serial connection to the Arduino on COM3 at 9600 baud rate
+
+def main():  // Define the main function
+    print('2')  // Print '2' to the console
+    arduino_data = 0  // Initialize a variable to hold the data from the Arduino
+    arduino_data = arduino.readline()  // Read a line of data from the Arduino
+    print('3')  // Print '3' to the console
+    decoded_value = str(arduino_data[0:len(arduino_data)].decode("utf-8"))  // Decode the data from bytes to a string
+
+    if isinstance(decoded_value, float):  // If the decoded value is a float
+        print(float(decoded_value) + 0.1)  // Print the value plus 0.1
+    else:  // If the decoded value is not a float
+        print(float(decoded_value))  // Print the value as a float
+
+if __name__ == '__main__':  // If this script is being run directly (not imported as a module)
+    print("1")  // Print '1' to the console
+    main()  // Call the main function
