@@ -1,1 +1,0 @@
-# herowear-activity-monitoring
